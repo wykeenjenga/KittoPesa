@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import GradientButton from '../components/GradientButton';
 import { Bouncy, FadeSlideIn, ScaleIn, usePulse } from '../components/Motion';
+import ScreenBackground from '../components/ScreenBackground';
 import WalletCardView, { AddCardGhost, MiniWalletCard } from '../components/WalletCardView';
 import { METHOD_COLOR, METHOD_ICON } from '../constants';
 import { useWalletCtx } from '../contexts/WalletContext';
@@ -29,8 +30,8 @@ export default function WalletScreen({ navigation }: Props) {
   const backCard = cards.length > 1 ? cards[(selectedCardIndex + 1) % cards.length] : undefined;
 
   return (
+    <ScreenBackground>
     <ScrollView
-      style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
@@ -147,6 +148,7 @@ export default function WalletScreen({ navigation }: Props) {
         ))
       )}
     </ScrollView>
+    </ScreenBackground>
   );
 }
 

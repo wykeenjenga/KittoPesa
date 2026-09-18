@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Bouncy, FadeSlideIn } from '../components/Motion';
+import ScreenBackground from '../components/ScreenBackground';
 import { useWalletCtx } from '../contexts/WalletContext';
 import { useProducts } from '../hooks/useProducts';
 import type { ShopStackParamList } from '../navigation/types';
@@ -43,7 +44,7 @@ export default function ShopScreen({ navigation }: Props) {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <ScreenBackground>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
@@ -137,7 +138,7 @@ export default function ShopScreen({ navigation }: Props) {
           </View>
         )}
       </ScrollView>
-    </View>
+    </ScreenBackground>
   );
 }
 

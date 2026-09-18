@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { describeWeatherCode } from '../api/weather';
 import { Bouncy, FadeSlideIn } from '../components/Motion';
+import ScreenBackground from '../components/ScreenBackground';
 import { METHOD_COLOR, METHOD_ICON } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import { useRates } from '../contexts/RatesContext';
@@ -27,11 +28,11 @@ export default function HomeScreen({ navigation }: Props) {
   const eurToKes = rates ? rates.usdToKes / rates.usdToEur : null;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
+    <ScreenBackground>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.header}>
         <View>
           <Text style={[styles.greeting, { color: colors.text }]}>Hi, {firstName} 👋</Text>
@@ -142,7 +143,8 @@ export default function HomeScreen({ navigation }: Props) {
           </FadeSlideIn>
         ))
       )}
-    </ScrollView>
+      </ScrollView>
+    </ScreenBackground>
   );
 }
 

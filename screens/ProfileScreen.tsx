@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ScreenBackground from '../components/ScreenBackground';
 import { useAuth } from '../contexts/AuthContext';
 import type { ProfileStackParamList } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
@@ -12,8 +13,8 @@ export default function ProfileScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
 
   return (
+    <ScreenBackground>
     <ScrollView
-      style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
@@ -71,6 +72,7 @@ export default function ProfileScreen({ navigation }: Props) {
         Demo profile — for preview purposes only.
       </Text>
     </ScrollView>
+    </ScreenBackground>
   );
 }
 
