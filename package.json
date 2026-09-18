@@ -10,6 +10,7 @@
     "expo": "~57.0.24",
     "expo-linear-gradient": "~57.0.2",
     "expo-location": "~57.0.19",
+    "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -17,6 +18,7 @@
     "react-native-gesture-handler": "~2.32.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {

@@ -19,6 +19,8 @@ export type ShopStackParamList = {
   ShopMain: undefined;
   ProductDetail: { product: Product };
   Cart: undefined;
+  Orders: undefined;
+  OrderTracking: { orderId: string };
 };
 
 export type WalletStackParamList = {

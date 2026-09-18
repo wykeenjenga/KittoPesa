@@ -1,5 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import CartScreen from '../screens/CartScreen';
+import OrdersListScreen from '../screens/OrdersListScreen';
+import OrderTrackingScreen from '../screens/OrderTrackingScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import ShopScreen from '../screens/ShopScreen';
 import type { ShopStackParamList } from './types';
@@ -12,6 +14,8 @@ export default function ShopStackNavigator() {
       <Stack.Screen name="ShopMain" component={ShopScreen} />
       <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <Stack.Screen name="Cart" component={CartScreen} />
+      <Stack.Screen name="Orders" component={OrdersListScreen} />
+      <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
     </Stack.Navigator>
   );
 }

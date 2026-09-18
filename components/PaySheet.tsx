@@ -276,7 +276,7 @@ export default function PaySheet({
               </Text>
               <GradientButton
                 label="Done"
-                variant="neutral"
+                variant="accent"
                 onPress={finish}
                 style={styles.doneButton}
               />

@@ -1,14 +1,18 @@
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AddCardSheet from './components/AddCardSheet';
+import AnimatedSplash from './components/AnimatedSplash';
 import PaySheet from './components/PaySheet';
 import { AuthProvider } from './contexts/AuthContext';
 import { RatesProvider } from './contexts/RatesContext';
 import { useWalletCtx, WalletProvider } from './contexts/WalletContext';
 import RootNavigator from './navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './theme/ThemeContext';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function GlobalModals() {
   const wallet = useWalletCtx();
@@ -36,6 +40,7 @@ function GlobalModals() {
 function AppShell() {
   const { colors } = useTheme();
   const isWeb = Platform.OS === 'web';
+  const [showSplash, setShowSplash] = useState(true);
 
   // React Native Web renders touchables as focusable elements, which picks
   // up the browser's default focus ring on tap/click. Suppress it globally
@@ -50,12 +55,20 @@ function AppShell() {
     };
   }, []);
 
+  // Hand off from the native splash to our own animated one as soon as we
+  // can render — the real app mounts underneath immediately so its data
+  // (rates, weather) is already loading while the animation plays.
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
   return (
     <View style={[styles.outer, isWeb && { backgroundColor: '#20222a' }]}>
       <View style={[styles.frame, isWeb && styles.webFrame, { backgroundColor: colors.background }]}>
         <StatusBar style={colors.statusBar} />
         <RootNavigator />
         <GlobalModals />
+        {showSplash && <AnimatedSplash onFinish={() => setShowSplash(false)} />}
       </View>
     </View>
   );

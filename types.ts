@@ -57,3 +57,25 @@ export type AppNotification = {
   read: boolean;
   icon: 'card' | 'gift' | 'alert' | 'bag';
 };
+
+export type OrderStatus = 'placed' | 'preparing' | 'out_for_delivery' | 'delivered';
+
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  placed: 'Order placed',
+  preparing: 'Preparing your order',
+  out_for_delivery: 'Out for delivery',
+  delivered: 'Delivered',
+};
+
+export type Order = {
+  id: string;
+  items: CartItem[];
+  total: number;
+  status: OrderStatus;
+  placedAt: number;
+  /** 0 (at the store) to 1 (at the destination) — drives the tracking view. */
+  routeProgress: number;
+  courierName: string;
+  etaMinutes: number;
+  transactionId: string;
+};

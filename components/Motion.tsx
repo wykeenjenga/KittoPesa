@@ -98,7 +98,10 @@ export function Bouncy({
   };
 
   return (
-    <Pressable onPress={onPress} onPressIn={pressIn} onPressOut={pressOut} disabled={disabled}>
+    // `style` is applied to both layers: Pressable needs it too, otherwise
+    // it shrink-wraps to content and a width like '100%' on the inner
+    // Animated.View has nothing to resolve against and collapses.
+    <Pressable style={style} onPress={onPress} onPressIn={pressIn} onPressOut={pressOut} disabled={disabled}>
       <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
     </Pressable>
   );

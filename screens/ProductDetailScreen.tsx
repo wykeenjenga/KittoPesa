@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import GradientButton from '../components/GradientButton';
-import { Bouncy } from '../components/Motion';
+import { Bouncy, PopIn, usePulse } from '../components/Motion';
 import ScreenHeader from '../components/ScreenHeader';
 import { useWalletCtx } from '../contexts/WalletContext';
 import type { ShopStackParamList } from '../navigation/types';
@@ -17,10 +17,13 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
   const { addToCart, openPay } = useWalletCtx();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [addCount, setAddCount] = useState(0);
+  const imageBounce = usePulse(addCount);
 
   const handleAdd = () => {
     addToCart(product, quantity);
     setAdded(true);
+    setAddCount((c) => c + 1);
     setTimeout(() => setAdded(false), 1200);
   };
 
@@ -31,6 +34,7 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
       amount: product.price * quantity,
       kind: 'pay',
       category: product.category,
+      items: [{ product, quantity }],
     });
   };
 
@@ -39,7 +43,17 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
       <ScreenHeader title="Product" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={[styles.imageWrap, { backgroundColor: '#fff' }]}>
-          <Image source={{ uri: product.image }} style={styles.image} resizeMode="contain" />
+          <Animated.Image
+            source={{ uri: product.image }}
+            style={[styles.image, { transform: [{ scale: imageBounce }] }]}
+            resizeMode="contain"
+          />
+          {added && (
+            <PopIn style={[styles.addedBadge, { backgroundColor: colors.accent }]}>
+              <Ionicons name="checkmark" size={14} color="#fff" />
+              <Text style={styles.addedBadgeText}>+{quantity}</Text>
+            </PopIn>
+          )}
         </View>
 
         <Text style={[styles.category, { color: colors.accent }]}>
@@ -120,6 +134,22 @@ const styles = StyleSheet.create({
   image: {
     width: '70%',
     height: '70%',
+  },
+  addedBadge: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+  },
+  addedBadgeText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
   },
   category: {
     fontSize: 11,

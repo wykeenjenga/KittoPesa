@@ -1,13 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type {
   AppNotification,
   CartItem,
+  Order,
+  OrderStatus,
   PaymentMethod,
   Product,
   Transaction,
   TransactionKind,
   WalletCard,
 } from '../types';
+import { ORDER_STATUS_LABEL } from '../types';
 
 const INITIAL_CARDS: WalletCard[] = [
   {
@@ -57,10 +60,33 @@ type PayRequest = {
   kind?: TransactionKind;
   category?: string;
   fromCart?: boolean;
+  items?: CartItem[];
 };
 
 function makeReference() {
   return 'KP' + Math.random().toString(36).slice(2, 10).toUpperCase();
+}
+
+// --- Order lifecycle timing (all client-side, simulated) ---
+const PREPARING_AT_MS = 5000;
+const OUT_FOR_DELIVERY_AT_MS = 11000;
+const DELIVERY_DURATION_MS = 24000;
+const DELIVERED_AT_MS = OUT_FOR_DELIVERY_AT_MS + DELIVERY_DURATION_MS;
+const COURIER_NAMES = ['James M.', 'Grace W.', 'Kevin O.', 'Faith N.', 'Peter K.'];
+
+function deriveOrder(order: Order): Order {
+  const elapsed = Date.now() - order.placedAt;
+  if (elapsed >= DELIVERED_AT_MS) {
+    return { ...order, status: 'delivered', routeProgress: 1 };
+  }
+  if (elapsed >= OUT_FOR_DELIVERY_AT_MS) {
+    const progress = (elapsed - OUT_FOR_DELIVERY_AT_MS) / DELIVERY_DURATION_MS;
+    return { ...order, status: 'out_for_delivery', routeProgress: Math.min(1, progress) };
+  }
+  if (elapsed >= PREPARING_AT_MS) {
+    return { ...order, status: 'preparing', routeProgress: 0 };
+  }
+  return { ...order, status: 'placed', routeProgress: 0 };
 }
 
 /**
@@ -75,6 +101,7 @@ export function useWallet() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   const [payVisible, setPayVisible] = useState(false);
   const [payRequest, setPayRequest] = useState<PayRequest>({ method: 'mpesa' });
@@ -96,9 +123,10 @@ export function useWallet() {
 
   const completePayment = (merchant: string, amount: number, method: PaymentMethod) => {
     const kind = payRequest.kind ?? 'pay';
+    const transactionId = Date.now().toString();
     setTransactions((prev) => [
       {
-        id: Date.now().toString(),
+        id: transactionId,
         merchant,
         amount,
         method,
@@ -111,16 +139,67 @@ export function useWallet() {
     ]);
     setBalance((prev) => Math.max(0, prev - amount));
     if (payRequest.fromCart) setCart([]);
-    pushNotification({
-      title: kind === 'send' ? 'Money sent' : 'Payment successful',
-      body:
-        kind === 'send'
-          ? `You sent KES ${amount.toLocaleString()} to ${merchant}.`
-          : `You paid KES ${amount.toLocaleString()} to ${merchant}.`,
-      icon: 'card',
-    });
+
+    if (kind === 'pay' && payRequest.items && payRequest.items.length > 0) {
+      const order: Order = {
+        id: 'ORD' + Date.now().toString(36).toUpperCase(),
+        items: payRequest.items,
+        total: amount,
+        status: 'placed',
+        placedAt: Date.now(),
+        routeProgress: 0,
+        courierName: COURIER_NAMES[Math.floor(Math.random() * COURIER_NAMES.length)],
+        etaMinutes: 25 + Math.floor(Math.random() * 20),
+        transactionId,
+      };
+      setOrders((prev) => [order, ...prev]);
+      pushNotification({
+        title: 'Order placed',
+        body: `Your order from ${merchant} is being prepared.`,
+        icon: 'bag',
+      });
+    } else {
+      pushNotification({
+        title: kind === 'send' ? 'Money sent' : 'Payment successful',
+        body:
+          kind === 'send'
+            ? `You sent KES ${amount.toLocaleString()} to ${merchant}.`
+            : `You paid KES ${amount.toLocaleString()} to ${merchant}.`,
+        icon: 'card',
+      });
+    }
     setPayVisible(false);
   };
+
+  // Advance active orders once a second, purely derived from elapsed time —
+  // this is what makes the tracking screen progress even if you leave and
+  // come back later.
+  useEffect(() => {
+    if (orders.length === 0) return;
+    const interval = setInterval(() => {
+      setOrders((prev) =>
+        prev.map((o) => {
+          const next = deriveOrder(o);
+          if (next.status !== o.status) {
+            const messages: Record<OrderStatus, string> = {
+              placed: 'Your order has been placed.',
+              preparing: 'Your order is being prepared.',
+              out_for_delivery: `${next.courierName} is on the way with your order.`,
+              delivered: 'Your order has arrived. Enjoy!',
+            };
+            pushNotification({
+              title: ORDER_STATUS_LABEL[next.status],
+              body: messages[next.status],
+              icon: 'bag',
+            });
+          }
+          return next;
+        }),
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders.length]);
 
   const addCard = (card: WalletCard) => setCards((prev) => [...prev, card]);
 
@@ -183,6 +262,7 @@ export function useWallet() {
       kind: 'pay',
       category: 'Shopping',
       fromCart: true,
+      items: cart,
     });
   };
 
@@ -202,6 +282,7 @@ export function useWallet() {
     setTransactions([]);
     setCart([]);
     setNotifications(INITIAL_NOTIFICATIONS);
+    setOrders([]);
   };
 
   return {
@@ -233,6 +314,7 @@ export function useWallet() {
     markNotificationRead,
     markAllNotificationsRead,
     unreadCount,
+    orders,
     resetDemo,
   };
 }
