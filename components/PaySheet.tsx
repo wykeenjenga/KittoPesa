@@ -10,7 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type { PaymentMethod, WalletCard } from '../types';
+import { useTheme } from '../theme/ThemeContext';
+import type { PaymentMethod, TransactionKind, WalletCard } from '../types';
+import GradientButton from './GradientButton';
 import { Bouncy, PopIn } from './Motion';
 import WalletCardView from './WalletCardView';
 
@@ -22,6 +24,7 @@ export default function PaySheet({
   initialMethod,
   initialMerchant,
   initialAmount,
+  kind = 'pay',
   onClose,
   onComplete,
 }: {
@@ -30,9 +33,11 @@ export default function PaySheet({
   initialMethod: PaymentMethod;
   initialMerchant?: string;
   initialAmount?: number;
+  kind?: TransactionKind;
   onClose: () => void;
   onComplete: (merchant: string, amount: number, method: PaymentMethod) => void;
 }) {
+  const { colors } = useTheme();
   const [method, setMethod] = useState<PaymentMethod>(initialMethod);
   const [merchant, setMerchant] = useState('');
   const [amount, setAmount] = useState('');
@@ -40,6 +45,8 @@ export default function PaySheet({
   const [selectedCardId, setSelectedCardId] = useState(cards[0]?.id);
   const [stage, setStage] = useState<Stage>('form');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isSend = kind === 'send';
 
   useEffect(() => {
     if (visible) {
@@ -76,66 +83,107 @@ export default function PaySheet({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
           {stage === 'form' && (
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.title}>Pay for goods</Text>
-              <Text style={styles.subtitle}>Demo checkout — nothing is actually charged.</Text>
+              <Text style={[styles.title, { color: colors.text }]}>
+                {isSend ? 'Send money' : 'Pay for goods'}
+              </Text>
+              <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                Demo checkout — nothing is actually charged.
+              </Text>
 
-              <Text style={styles.label}>Merchant / till name</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>
+                {isSend ? 'Recipient' : 'Merchant / till name'}
+              </Text>
               <TextInput
-                style={styles.input}
-                placeholder="e.g. Kitto Cafe"
+                style={[
+                  styles.input,
+                  { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border },
+                ]}
+                placeholder={isSend ? 'e.g. Jane Doe' : 'e.g. Kitto Cafe'}
+                placeholderTextColor={colors.textMuted}
                 value={merchant}
                 onChangeText={setMerchant}
               />
 
-              <Text style={styles.label}>Amount (KES)</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>Amount (KES)</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border },
+                ]}
                 placeholder="0.00"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="decimal-pad"
                 value={amount}
                 onChangeText={setAmount}
               />
 
-              <Text style={styles.label}>Pay with</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>Pay with</Text>
               <View style={styles.methodRow}>
                 <MethodChip
                   active={method === 'mpesa'}
                   label="M-Pesa"
-                  icon={<Ionicons name="phone-portrait-outline" size={18} color={method === 'mpesa' ? '#fff' : '#0f9d58'} />}
+                  icon={
+                    <Ionicons
+                      name="phone-portrait-outline"
+                      size={18}
+                      color={method === 'mpesa' ? '#fff' : '#0f9d58'}
+                    />
+                  }
                   color="#0f9d58"
                   onPress={() => setMethod('mpesa')}
                 />
                 <MethodChip
                   active={method === 'card'}
                   label="Card"
-                  icon={<Ionicons name="card-outline" size={18} color={method === 'card' ? '#fff' : '#3b5bdb'} />}
+                  icon={
+                    <Ionicons
+                      name="card-outline"
+                      size={18}
+                      color={method === 'card' ? '#fff' : '#3b5bdb'}
+                    />
+                  }
                   color="#3b5bdb"
                   onPress={() => setMethod('card')}
                 />
                 <MethodChip
                   active={method === 'applepay'}
                   label="Apple Pay"
-                  icon={<Ionicons name="logo-apple" size={18} color={method === 'applepay' ? '#fff' : '#111'} />}
-                  color="#111"
+                  icon={
+                    <Ionicons
+                      name="logo-apple"
+                      size={18}
+                      color={method === 'applepay' ? '#fff' : colors.text}
+                    />
+                  }
+                  color={colors.text}
                   onPress={() => setMethod('applepay')}
                 />
               </View>
 
               {method === 'mpesa' && (
                 <View style={styles.methodDetail}>
-                  <Text style={styles.label}>M-Pesa phone number</Text>
+                  <Text style={[styles.label, { color: colors.textMuted }]}>
+                    M-Pesa phone number
+                  </Text>
                   <TextInput
-                    style={styles.input}
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colors.surfaceAlt,
+                        color: colors.text,
+                        borderColor: colors.border,
+                      },
+                    ]}
                     keyboardType="phone-pad"
                     value={phone}
                     onChangeText={setPhone}
                   />
-                  <Text style={styles.hint}>
+                  <Text style={[styles.hint, { color: colors.textMuted }]}>
                     You'll get a prompt on your phone to enter your M-Pesa PIN.
                   </Text>
                 </View>
@@ -144,7 +192,9 @@ export default function PaySheet({
               {method === 'card' && (
                 <View style={styles.methodDetail}>
                   {cards.length === 0 ? (
-                    <Text style={styles.hint}>No cards yet — add one from the wallet screen.</Text>
+                    <Text style={[styles.hint, { color: colors.textMuted }]}>
+                      No cards yet — add one from the wallet screen.
+                    </Text>
                   ) : (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                       {cards.map((c) => (
@@ -166,39 +216,41 @@ export default function PaySheet({
 
               {method === 'applepay' && (
                 <View style={styles.methodDetail}>
-                  <Text style={styles.hint}>
+                  <Text style={[styles.hint, { color: colors.textMuted }]}>
                     Confirm with Face ID to pay instantly.
                   </Text>
                 </View>
               )}
 
-              <Bouncy
-                style={[styles.payButton, !canPay && styles.buttonDisabled]}
+              <GradientButton
+                label={
+                  method === 'applepay'
+                    ? 'Pay'
+                    : `${isSend ? 'Send' : 'Pay'}${
+                        numericAmount > 0 ? ` KES ${numericAmount.toLocaleString()}` : ''
+                      }`
+                }
+                icon={
+                  method === 'applepay' ? (
+                    <Ionicons name="logo-apple" size={18} color="#fff" />
+                  ) : undefined
+                }
+                variant="accent"
                 onPress={startPay}
                 disabled={!canPay}
-              >
-                {method === 'applepay' ? (
-                  <View style={styles.applePayContent}>
-                    <Ionicons name="logo-apple" size={18} color="#fff" />
-                    <Text style={styles.applePayText}> Pay</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.payText}>
-                    Pay {numericAmount > 0 ? `KES ${numericAmount.toLocaleString()}` : ''}
-                  </Text>
-                )}
-              </Bouncy>
+                style={styles.payButton}
+              />
 
               <TouchableOpacity onPress={onClose} style={styles.cancelLink}>
-                <Text style={styles.cancelLinkText}>Cancel</Text>
+                <Text style={[styles.cancelLinkText, { color: colors.textMuted }]}>Cancel</Text>
               </TouchableOpacity>
             </ScrollView>
           )}
 
           {stage === 'processing' && (
             <View style={styles.centered}>
-              <ActivityIndicator size="large" color="#0f9d58" />
-              <Text style={styles.processingText}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={[styles.processingText, { color: colors.textMuted }]}>
                 {method === 'mpesa'
                   ? 'Check your phone to enter your M-Pesa PIN...'
                   : method === 'applepay'
@@ -210,15 +262,24 @@ export default function PaySheet({
 
           {stage === 'success' && (
             <View style={styles.centered}>
-              <PopIn style={styles.successCircle}>
+              <PopIn style={[styles.successCircle, { backgroundColor: colors.accent }]}>
                 <Ionicons name="checkmark" size={40} color="#fff" />
               </PopIn>
-              <Text style={styles.successTitle}>Payment successful</Text>
-              <Text style={styles.successAmount}>KES {numericAmount.toLocaleString()}</Text>
-              <Text style={styles.successMerchant}>to {merchant}</Text>
-              <Bouncy style={styles.doneButton} onPress={finish}>
-                <Text style={styles.doneText}>Done</Text>
-              </Bouncy>
+              <Text style={[styles.successTitle, { color: colors.text }]}>
+                {isSend ? 'Money sent' : 'Payment successful'}
+              </Text>
+              <Text style={[styles.successAmount, { color: colors.text }]}>
+                KES {numericAmount.toLocaleString()}
+              </Text>
+              <Text style={[styles.successMerchant, { color: colors.textMuted }]}>
+                to {merchant}
+              </Text>
+              <GradientButton
+                label="Done"
+                variant="neutral"
+                onPress={finish}
+                style={styles.doneButton}
+              />
             </View>
           )}
         </View>
@@ -243,11 +304,7 @@ function MethodChip({
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[
-        styles.chip,
-        { borderColor: color },
-        active && { backgroundColor: color },
-      ]}
+      style={[styles.chip, { borderColor: color }, active && { backgroundColor: color }]}
     >
       {icon}
       <Text style={[styles.chipText, { color: active ? '#fff' : color }]}>{label}</Text>
@@ -262,7 +319,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -272,36 +328,30 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#ddd',
     alignSelf: 'center',
     marginBottom: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#222',
   },
   subtitle: {
     fontSize: 12,
-    color: '#888',
     marginTop: 4,
     marginBottom: 16,
   },
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#555',
     marginBottom: 6,
     marginTop: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e2e2e2',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    backgroundColor: '#fafafa',
   },
   methodRow: {
     flexDirection: 'row',
@@ -325,7 +375,6 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 12,
-    color: '#888',
     marginTop: 6,
   },
   miniCardWrap: {
@@ -337,28 +386,7 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   payButton: {
-    backgroundColor: '#111',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
     marginTop: 24,
-  },
-  applePayContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  applePayText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
-  payText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
   },
   cancelLink: {
     alignItems: 'center',
@@ -366,7 +394,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cancelLinkText: {
-    color: '#999',
     fontWeight: '600',
   },
   centered: {
@@ -376,7 +403,6 @@ const styles = StyleSheet.create({
   processingText: {
     marginTop: 18,
     fontSize: 14,
-    color: '#555',
     textAlign: 'center',
     paddingHorizontal: 20,
   },
@@ -384,36 +410,25 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#0f9d58',
     alignItems: 'center',
     justifyContent: 'center',
   },
   successTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#222',
     marginTop: 16,
   },
   successAmount: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#222',
     marginTop: 6,
   },
   successMerchant: {
     fontSize: 14,
-    color: '#888',
     marginTop: 2,
   },
   doneButton: {
     marginTop: 24,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-  },
-  doneText: {
-    fontWeight: '700',
-    color: '#333',
+    width: '100%',
   },
 });

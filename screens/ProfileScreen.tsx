@@ -1,42 +1,75 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import type { WalletViewModel } from '../hooks/useWallet';
-import SettingsScreen from './SettingsScreen';
+import { useAuth } from '../contexts/AuthContext';
+import type { ProfileStackParamList } from '../navigation/types';
+import { useTheme } from '../theme/ThemeContext';
 
-export default function ProfileScreen({ wallet }: { wallet: WalletViewModel }) {
-  const [showSettings, setShowSettings] = useState(false);
+type Props = NativeStackScreenProps<ProfileStackParamList, 'ProfileMain'>;
 
-  if (showSettings) {
-    return <SettingsScreen wallet={wallet} onBack={() => setShowSettings(false)} />;
-  }
+export default function ProfileScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const { user, logout } = useAuth();
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.header}>
-        <View style={styles.avatar}>
+        <View style={[styles.avatar, { backgroundColor: colors.surfaceAlt }]}>
           <Text style={styles.avatarText}>🐱</Text>
         </View>
-        <Text style={styles.name}>Wycliff K</Text>
-        <Text style={styles.email}>wycliff@triply.co</Text>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>KittoPesa member since 2026</Text>
+        <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'Guest'}</Text>
+        <Text style={[styles.email, { color: colors.textMuted }]}>{user?.email ?? ''}</Text>
+        <View style={[styles.badge, { backgroundColor: colors.accentSoft }]}>
+          <Text style={[styles.badgeText, { color: colors.accent }]}>
+            KittoPesa member since 2026
+          </Text>
         </View>
       </View>
 
-      <View style={styles.card}>
-        <ProfileRow icon="person-outline" label="Personal information" />
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <ProfileRow
+          icon="person-outline"
+          label="Personal information"
+          onPress={() => navigation.navigate('PersonalInfo')}
+        />
         <Divider />
-        <ProfileRow icon="link-outline" label="Linked accounts" />
+        <ProfileRow
+          icon="link-outline"
+          label="Linked accounts"
+          onPress={() => navigation.navigate('LinkedAccounts')}
+        />
         <Divider />
-        <ProfileRow icon="shield-checkmark-outline" label="Security" />
+        <ProfileRow
+          icon="shield-checkmark-outline"
+          label="Security"
+          onPress={() => navigation.navigate('Security')}
+        />
         <Divider />
-        <ProfileRow icon="help-circle-outline" label="Help & support" />
+        <ProfileRow
+          icon="help-circle-outline"
+          label="Help & support"
+          onPress={() => navigation.navigate('HelpSupport')}
+        />
         <Divider />
-        <ProfileRow icon="settings-outline" label="Settings" onPress={() => setShowSettings(true)} />
+        <ProfileRow
+          icon="settings-outline"
+          label="Settings"
+          onPress={() => navigation.navigate('Settings')}
+        />
       </View>
 
-      <Text style={styles.footerNote}>Demo profile — for preview purposes only.</Text>
+      <TouchableOpacity style={[styles.logoutRow, { borderColor: colors.danger }]} onPress={logout}>
+        <Ionicons name="log-out-outline" size={18} color={colors.danger} />
+        <Text style={[styles.logoutText, { color: colors.danger }]}>Log out</Text>
+      </TouchableOpacity>
+
+      <Text style={[styles.footerNote, { color: colors.textMuted }]}>
+        Demo profile — for preview purposes only.
+      </Text>
     </ScrollView>
   );
 }
@@ -50,21 +83,23 @@ function ProfileRow({
   label: string;
   onPress?: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={onPress ? 0.6 : 1}>
       <View style={styles.rowLeft}>
-        <View style={styles.rowIcon}>
-          <Ionicons name={icon} size={18} color="#333" />
+        <View style={[styles.rowIcon, { backgroundColor: colors.surfaceAlt }]}>
+          <Ionicons name={icon} size={18} color={colors.text} />
         </View>
-        <Text style={styles.rowLabel}>{label}</Text>
+        <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color="#ccc" />
+      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
     </TouchableOpacity>
   );
 }
 
 function Divider() {
-  return <View style={styles.divider} />;
+  const { colors } = useTheme();
+  return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
 }
 
 const styles = StyleSheet.create({
@@ -81,7 +116,6 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    backgroundColor: '#eef0f4',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -92,34 +126,25 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111',
   },
   email: {
     fontSize: 13,
-    color: '#999',
     marginTop: 2,
   },
   badge: {
     marginTop: 10,
-    backgroundColor: '#eafbf1',
     borderRadius: 20,
     paddingVertical: 5,
     paddingHorizontal: 12,
   },
   badgeText: {
-    color: '#0f9d58',
     fontSize: 11,
     fontWeight: '700',
   },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    marginBottom: 20,
   },
   row: {
     flexDirection: 'row',
@@ -136,22 +161,31 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f2f2f2',
     alignItems: 'center',
     justifyContent: 'center',
   },
   rowLabel: {
     fontSize: 14,
-    color: '#111',
     fontWeight: '500',
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#eee',
+  },
+  logoutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    paddingVertical: 14,
+  },
+  logoutText: {
+    fontWeight: '700',
+    fontSize: 14,
   },
   footerNote: {
     textAlign: 'center',
-    color: '#bbb',
     fontSize: 11,
     marginTop: 18,
   },

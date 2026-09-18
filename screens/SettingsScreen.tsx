@@ -1,26 +1,19 @@
-import { Ionicons } from '@expo/vector-icons';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { Bouncy } from '../components/Motion';
-import type { WalletViewModel } from '../hooks/useWallet';
+import ScreenHeader from '../components/ScreenHeader';
+import { useWalletCtx } from '../contexts/WalletContext';
+import type { ProfileStackParamList } from '../navigation/types';
+import { useTheme, ThemeMode } from '../theme/ThemeContext';
 
-export default function SettingsScreen({
-  wallet,
-  onBack,
-}: {
-  wallet: WalletViewModel;
-  onBack: () => void;
-}) {
+type Props = NativeStackScreenProps<ProfileStackParamList, 'Settings'>;
+
+export default function SettingsScreen({ navigation }: Props) {
+  const { colors, mode, setMode } = useTheme();
+  const wallet = useWalletCtx();
   const [biometric, setBiometric] = useState(true);
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [currency, setCurrency] = useState<'KES' | 'USD'>('KES');
   const [justReset, setJustReset] = useState(false);
 
@@ -31,63 +24,101 @@ export default function SettingsScreen({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton} hitSlop={10}>
-          <Ionicons name="chevron-back" size={22} color="#111" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 22 }} />
-      </View>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScreenHeader title="Settings" onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionLabel}>PREFERENCES</Text>
-        <View style={styles.card}>
-          <Row label="Face ID / Biometric login">
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>APPEARANCE</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={styles.appearanceRow}>
+            {(['system', 'light', 'dark'] as ThemeMode[]).map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={[
+                  styles.appearanceChip,
+                  { borderColor: colors.border },
+                  mode === m && {
+                    backgroundColor: colors.primaryButtonBg,
+                    borderColor: colors.primaryButtonBg,
+                  },
+                ]}
+                onPress={() => setMode(m)}
+              >
+                <Text
+                  style={[
+                    styles.appearanceText,
+                    { color: mode === m ? colors.primaryButtonText : colors.text },
+                  ]}
+                >
+                  {m === 'system' ? 'System' : m === 'light' ? 'Light' : 'Dark'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>PREFERENCES</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Row label="Face ID / Biometric login" colors={colors}>
             <Switch value={biometric} onValueChange={setBiometric} />
           </Row>
-          <Divider />
-          <Row label="Push notifications">
+          <Divider colors={colors} />
+          <Row label="Push notifications" colors={colors}>
             <Switch value={notifications} onValueChange={setNotifications} />
-          </Row>
-          <Divider />
-          <Row label="Dark mode" hint="Coming soon">
-            <Switch value={darkMode} onValueChange={setDarkMode} disabled />
           </Row>
         </View>
 
-        <Text style={styles.sectionLabel}>CURRENCY</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>CURRENCY</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={styles.currencyRow}>
             {(['KES', 'USD'] as const).map((c) => (
               <TouchableOpacity
                 key={c}
-                style={[styles.currencyChip, currency === c && styles.currencyChipActive]}
+                style={[
+                  styles.currencyChip,
+                  { borderColor: colors.border },
+                  currency === c && {
+                    backgroundColor: colors.primaryButtonBg,
+                    borderColor: colors.primaryButtonBg,
+                  },
+                ]}
                 onPress={() => setCurrency(c)}
               >
-                <Text style={[styles.currencyText, currency === c && styles.currencyTextActive]}>
+                <Text
+                  style={[
+                    styles.currencyText,
+                    { color: currency === c ? colors.primaryButtonText : colors.text },
+                  ]}
+                >
                   {c}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.hint}>Display only in this demo — amounts stay in KES.</Text>
+          <Text style={[styles.hint, { color: colors.textMuted }]}>
+            Display only here — use the Convert tool on Home for live conversion.
+          </Text>
         </View>
 
-        <Text style={styles.sectionLabel}>DEMO DATA</Text>
-        <View style={styles.card}>
-          <Text style={styles.hint}>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>DEMO DATA</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.hint, { color: colors.textMuted }]}>
             Restore the starting balance, cards, and clear all transactions made in this session.
           </Text>
-          <Bouncy style={styles.resetButton} onPress={handleReset}>
-            <Text style={styles.resetButtonText}>{justReset ? 'Done ✓' : 'Reset demo data'}</Text>
+          <Bouncy
+            style={[styles.resetButton, { backgroundColor: colors.primaryButtonBg }]}
+            onPress={handleReset}
+          >
+            <Text style={[styles.resetButtonText, { color: colors.primaryButtonText }]}>
+              {justReset ? 'Done ✓' : 'Reset demo data'}
+            </Text>
           </Bouncy>
         </View>
 
-        <Text style={styles.sectionLabel}>ABOUT</Text>
-        <View style={styles.card}>
-          <Row label="Version">
-            <Text style={styles.value}>1.0.0 (Demo)</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>ABOUT</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Row label="Version" colors={colors}>
+            <Text style={{ color: colors.textMuted, fontSize: 14 }}>1.0.0 (Demo)</Text>
           </Row>
         </View>
       </ScrollView>
@@ -97,48 +128,26 @@ export default function SettingsScreen({
 
 function Row({
   label,
-  hint,
+  colors,
   children,
 }: {
   label: string;
-  hint?: string;
+  colors: { text: string };
   children: React.ReactNode;
 }) {
   return (
     <View style={styles.row}>
-      <View>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {hint && <Text style={styles.rowHint}>{hint}</Text>}
-      </View>
+      <Text style={{ fontSize: 14, color: colors.text, fontWeight: '500' }}>{label}</Text>
       {children}
     </View>
   );
 }
 
-function Divider() {
-  return <View style={styles.divider} />;
+function Divider({ colors }: { colors: { border: string } }) {
+  return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
-  },
-  backButton: {
-    padding: 2,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#111',
-  },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
@@ -146,20 +155,28 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#999',
     letterSpacing: 0.5,
     marginBottom: 8,
     marginTop: 18,
   },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+  },
+  appearanceRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  appearanceChip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
+  },
+  appearanceText: {
+    fontWeight: '700',
+    fontSize: 12,
   },
   row: {
     flexDirection: 'row',
@@ -167,19 +184,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
   },
-  rowLabel: {
-    fontSize: 14,
-    color: '#111',
-    fontWeight: '500',
-  },
-  rowHint: {
-    fontSize: 11,
-    color: '#aaa',
-    marginTop: 2,
-  },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#eee',
   },
   currencyRow: {
     flexDirection: 'row',
@@ -191,38 +197,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: '#ddd',
-  },
-  currencyChipActive: {
-    backgroundColor: '#111',
-    borderColor: '#111',
   },
   currencyText: {
     fontWeight: '700',
-    color: '#666',
     fontSize: 13,
-  },
-  currencyTextActive: {
-    color: '#fff',
   },
   hint: {
     fontSize: 12,
-    color: '#999',
     marginBottom: 10,
   },
   resetButton: {
-    backgroundColor: '#111',
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
   },
   resetButtonText: {
-    color: '#fff',
     fontWeight: '700',
     fontSize: 13,
-  },
-  value: {
-    color: '#999',
-    fontSize: 14,
   },
 });

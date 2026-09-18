@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import GradientButton from './GradientButton';
+import { useTheme } from '../theme/ThemeContext';
 import type { CardBrand, WalletCard } from '../types';
 
 const GRADIENTS: [string, string][] = [
@@ -36,6 +38,7 @@ export default function AddCardSheet({
   onClose: () => void;
   onAdd: (card: WalletCard) => void;
 }) {
+  const { colors } = useTheme();
   const [number, setNumber] = useState('');
   const [holder, setHolder] = useState('');
   const [expiry, setExpiry] = useState('');
@@ -52,14 +55,14 @@ export default function AddCardSheet({
   const submit = () => {
     if (!isValid) return;
     const brand: CardBrand = digitsOnly.startsWith('4') ? 'visa' : 'mastercard';
-    const colors = GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)];
+    const cardColors = GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)];
     onAdd({
       id: Date.now().toString(),
       brand,
       last4: digitsOnly.slice(-4),
       holder: holder.trim().toUpperCase(),
       expiry,
-      colors,
+      colors: cardColors,
     });
     reset();
     onClose();
@@ -68,36 +71,48 @@ export default function AddCardSheet({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>Add a card</Text>
-          <Text style={styles.subtitle}>
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.title, { color: colors.text }]}>Add a card</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
             Demo only — this card is stored on this device and never sent anywhere.
           </Text>
 
-          <Text style={styles.label}>Card number</Text>
+          <Text style={[styles.label, { color: colors.textMuted }]}>Card number</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border },
+            ]}
             placeholder="1234 5678 9012 3456"
+            placeholderTextColor={colors.textMuted}
             keyboardType="number-pad"
             value={number}
             onChangeText={(t) => setNumber(formatCardNumber(t))}
             maxLength={19}
           />
 
-          <Text style={styles.label}>Cardholder name</Text>
+          <Text style={[styles.label, { color: colors.textMuted }]}>Cardholder name</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border },
+            ]}
             placeholder="JANE DOE"
+            placeholderTextColor={colors.textMuted}
             autoCapitalize="characters"
             value={holder}
             onChangeText={setHolder}
           />
 
-          <Text style={styles.label}>Expiry (MM/YY)</Text>
+          <Text style={[styles.label, { color: colors.textMuted }]}>Expiry (MM/YY)</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border },
+            ]}
             placeholder="09/29"
+            placeholderTextColor={colors.textMuted}
             keyboardType="number-pad"
             value={expiry}
             onChangeText={(t) => setExpiry(formatExpiry(t))}
@@ -106,21 +121,21 @@ export default function AddCardSheet({
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
+              style={[styles.button, { backgroundColor: colors.surfaceAlt }]}
               onPress={() => {
                 reset();
                 onClose();
               }}
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={[styles.cancelText, { color: colors.text }]}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.addButton, !isValid && styles.buttonDisabled]}
+            <GradientButton
+              label="Add card"
+              variant="accent"
               onPress={submit}
               disabled={!isValid}
-            >
-              <Text style={styles.addText}>Add card</Text>
-            </TouchableOpacity>
+              style={styles.gradientButton}
+            />
           </View>
         </View>
       </View>
@@ -135,7 +150,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -144,36 +158,30 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#ddd',
     alignSelf: 'center',
     marginBottom: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#222',
   },
   subtitle: {
     fontSize: 12,
-    color: '#888',
     marginTop: 4,
     marginBottom: 16,
   },
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#555',
     marginBottom: 6,
     marginTop: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e2e2e2',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    backgroundColor: '#fafafa',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -186,21 +194,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
   },
-  cancelButton: {
-    backgroundColor: '#f1f1f1',
+  gradientButton: {
+    flex: 1,
   },
   cancelText: {
-    color: '#555',
     fontWeight: '600',
-  },
-  addButton: {
-    backgroundColor: '#0f9d58',
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
-  addText: {
-    color: '#fff',
-    fontWeight: '700',
   },
 });

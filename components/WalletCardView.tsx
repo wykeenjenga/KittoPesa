@@ -1,5 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
 import type { WalletCard } from '../types';
 
 export default function WalletCardView({
@@ -18,9 +20,10 @@ export default function WalletCardView({
     >
       <View style={styles.topRow}>
         <Text style={styles.chip}>▮▮</Text>
-        <Text style={styles.brand}>
-          {card.brand === 'visa' ? 'VISA' : 'Mastercard'}
-        </Text>
+        <View style={styles.topRowRight}>
+          {card.frozen && <Ionicons name="snow-outline" size={16} color="#fff" />}
+          <Text style={styles.brand}>{card.brand === 'visa' ? 'VISA' : 'Mastercard'}</Text>
+        </View>
       </View>
       <Text style={styles.number}>•••• •••• •••• {card.last4}</Text>
       <View style={styles.bottomRow}>
@@ -33,6 +36,7 @@ export default function WalletCardView({
           <Text style={styles.value}>{card.expiry}</Text>
         </View>
       </View>
+      {card.frozen && <View style={styles.frozenOverlay} />}
     </LinearGradient>
   );
 }
@@ -59,20 +63,24 @@ export function MiniWalletCard({
         end={{ x: 1, y: 1 }}
         style={styles.mini}
       >
-        <Text style={styles.miniBrand}>
-          {card.brand === 'visa' ? 'VISA' : 'MC'}
-        </Text>
+        <Text style={styles.miniBrand}>{card.brand === 'visa' ? 'VISA' : 'MC'}</Text>
         <Text style={styles.miniNumber}>•• {card.last4}</Text>
+        {card.frozen && <View style={styles.frozenOverlay} />}
       </LinearGradient>
     </TouchableOpacity>
   );
 }
 
 export function AddCardGhost({ onPress }: { onPress: () => void }) {
+  const { colors } = useTheme();
   return (
-    <TouchableOpacity style={styles.ghost} onPress={onPress} activeOpacity={0.6}>
-      <Text style={styles.ghostPlus}>+</Text>
-      <Text style={styles.ghostText}>Add card</Text>
+    <TouchableOpacity
+      style={[styles.ghost, { borderColor: colors.border }]}
+      onPress={onPress}
+      activeOpacity={0.6}
+    >
+      <Text style={[styles.ghostPlus, { color: colors.textMuted }]}>+</Text>
+      <Text style={[styles.ghostText, { color: colors.textMuted }]}>Add card</Text>
     </TouchableOpacity>
   );
 }
@@ -90,6 +98,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  topRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   chip: {
     color: 'rgba(255,255,255,0.85)',
@@ -123,12 +136,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
+  frozenOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(180, 220, 255, 0.25)',
+    borderRadius: 20,
+  },
   ghost: {
     width: 96,
     height: 62,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: '#d8d8d8',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
@@ -136,12 +157,10 @@ const styles = StyleSheet.create({
   },
   ghostPlus: {
     fontSize: 20,
-    color: '#999',
     lineHeight: 22,
   },
   ghostText: {
     fontSize: 10,
-    color: '#999',
     marginTop: 2,
     fontWeight: '600',
   },
