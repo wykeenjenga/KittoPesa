@@ -1,5 +1,45 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleProp, ViewStyle } from 'react-native';
+import { Animated, Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+
+// Properties that affect how a box is sized/placed by its OWN parent.
+// Everything else (alignItems, justifyContent, padding, border*,
+// backgroundColor, borderRadius...) is layout/visual for a box's CHILDREN
+// and must stay off the outer Pressable — otherwise e.g. alignItems:
+// 'center' makes Pressable shrink-wrap its single child instead of
+// stretching it to fill, which is invisible on filled buttons but shows up
+// as a second, wrongly-sized box on border-only ones.
+const SIZE_KEYS = [
+  'width',
+  'height',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
+  'flex',
+  'flexGrow',
+  'flexShrink',
+  'flexBasis',
+  'alignSelf',
+  'aspectRatio',
+  'margin',
+  'marginTop',
+  'marginBottom',
+  'marginLeft',
+  'marginRight',
+  'marginHorizontal',
+  'marginVertical',
+] as const;
+
+function pickSizeStyle(style: StyleProp<ViewStyle>): ViewStyle {
+  const flat = StyleSheet.flatten(style) ?? {};
+  const picked: ViewStyle = {};
+  for (const key of SIZE_KEYS) {
+    if (flat[key] !== undefined) {
+      (picked as Record<string, unknown>)[key] = flat[key];
+    }
+  }
+  return picked;
+}
 
 /** Fades and slides content in from below on mount. Used for list rows. */
 export function FadeSlideIn({
@@ -98,10 +138,19 @@ export function Bouncy({
   };
 
   return (
-    // `style` is applied to both layers: Pressable needs it too, otherwise
-    // it shrink-wraps to content and a width like '100%' on the inner
-    // Animated.View has nothing to resolve against and collapses.
-    <Pressable style={style} onPress={onPress} onPressIn={pressIn} onPressOut={pressOut} disabled={disabled}>
+    // Only sizing props (width, flex, alignSelf, margin...) go on Pressable,
+    // so it's correctly sized by its own parent — e.g. width: '100%' has
+    // something to resolve against instead of collapsing. Visual/layout
+    // props (alignItems, padding, border, background) stay on the inner
+    // Animated.View only, so it always fills Pressable exactly rather than
+    // shrink-wrapping to its own content inside it.
+    <Pressable
+      style={pickSizeStyle(style)}
+      onPress={onPress}
+      onPressIn={pressIn}
+      onPressOut={pressOut}
+      disabled={disabled}
+    >
       <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
     </Pressable>
   );
