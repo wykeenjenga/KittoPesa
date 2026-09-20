@@ -1,23 +1,24 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeContext';
 
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const SIZE = 120;
-const STROKE = 6;
-const RADIUS = (SIZE - STROKE) / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /**
- * A brief animated intro: an SVG ring draws itself in, the logo pops into
+ * A brief animated intro: a ring pops and pulses in, the logo scales into
  * the center, then the wordmark slides up before the whole thing fades to
  * reveal the app underneath (which is already mounted and loading data).
+ *
+ * Deliberately uses only Animated.View transforms/opacity — no animated SVG
+ * props (e.g. Animated.createAnimatedComponent(Circle) with strokeDashoffset)
+ * which is unreliable on react-native-web and was crashing the app on load.
  */
 export default function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
   const { colors } = useTheme();
-  const drawAnim = useRef(new Animated.Value(0)).current;
-  const logoScale = useRef(new Animated.Value(0.5)).current;
+  const ringScale = useRef(new Animated.Value(0.5)).current;
+  const ringOpacity = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
+  const logoScale = useRef(new Animated.Value(0.4)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const textTranslate = useRef(new Animated.Value(12)).current;
@@ -25,26 +26,28 @@ export default function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
 
   useEffect(() => {
     Animated.sequence([
-      Animated.timing(drawAnim, { toValue: 1, duration: 850, useNativeDriver: true }),
+      Animated.parallel([
+        Animated.spring(ringScale, { toValue: 1, friction: 6, useNativeDriver: true }),
+        Animated.timing(ringOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]),
       Animated.parallel([
         Animated.spring(logoScale, { toValue: 1, friction: 5, useNativeDriver: true }),
         Animated.timing(logoOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.08, duration: 260, useNativeDriver: true }),
+        Animated.spring(pulse, { toValue: 1, friction: 4, useNativeDriver: true }),
       ]),
       Animated.parallel([
         Animated.timing(textOpacity, { toValue: 1, duration: 320, useNativeDriver: true }),
         Animated.spring(textTranslate, { toValue: 0, friction: 7, useNativeDriver: true }),
       ]),
-      Animated.delay(450),
+      Animated.delay(400),
       Animated.timing(containerOpacity, { toValue: 0, duration: 320, useNativeDriver: true }),
     ]).start(({ finished }) => {
       if (finished) onFinish();
     });
   }, []);
-
-  const strokeDashoffset = drawAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [CIRCUMFERENCE, 0],
-  });
 
   return (
     <Animated.View
@@ -54,30 +57,17 @@ export default function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
         { backgroundColor: colors.background, opacity: containerOpacity },
       ]}
     >
-      <View style={styles.ringWrap}>
-        <Svg width={SIZE} height={SIZE}>
-          <Circle
-            cx={SIZE / 2}
-            cy={SIZE / 2}
-            r={RADIUS}
-            stroke={colors.surfaceAlt}
-            strokeWidth={STROKE}
-            fill="none"
-          />
-          <AnimatedCircle
-            cx={SIZE / 2}
-            cy={SIZE / 2}
-            r={RADIUS}
-            stroke={colors.accent}
-            strokeWidth={STROKE}
-            fill="none"
-            strokeDasharray={CIRCUMFERENCE}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            rotation={-90}
-            origin={`${SIZE / 2}, ${SIZE / 2}`}
-          />
-        </Svg>
+      <View style={styles.stack}>
+        <Animated.View
+          style={[
+            styles.ring,
+            {
+              borderColor: colors.accent,
+              opacity: ringOpacity,
+              transform: [{ scale: Animated.multiply(ringScale, pulse) }],
+            },
+          ]}
+        />
         <Animated.Text
           style={[
             styles.emoji,
@@ -115,12 +105,20 @@ const styles = StyleSheet.create({
     zIndex: 100,
     elevation: 100,
   },
-  ringWrap: {
+  stack: {
+    width: SIZE,
+    height: SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: {
+  ring: {
     position: 'absolute',
+    width: SIZE,
+    height: SIZE,
+    borderRadius: SIZE / 2,
+    borderWidth: 5,
+  },
+  emoji: {
     fontSize: 40,
   },
   wordmark: {
